@@ -57,30 +57,47 @@ jobs:
           done
       - name: "Execute Gradle assemble"
         run: "./gradlew assembleDebug"
+      - name: "Execute Gradle lint"
+        run: "./gradlew lintDebug"
+      - name: "Collect APK metadata"
+        id: apk_meta
+        shell: bash
+        run: |
+          apk_path="$(ls play-services-core/build/outputs/apk/mapboxUser/debug/app.revanced.android.gms-*.apk | head -n1)"
+          sha256="$(sha256sum "$apk_path" | awk '{print $1}')"
+          echo "apk_path=$apk_path" >> "$GITHUB_OUTPUT"
+          echo "sha256=$sha256" >> "$GITHUB_OUTPUT"
       - name: "Upload ReVanced GmsCore APK"
         uses: actions/upload-artifact@v4
         with:
           name: "gmscore-pkg-rename-artifact"
-          path: "play-services-core/build/outputs/apk/mapboxUser/debug/app.revanced.android.gms-*.apk"
+          path: "${{ steps.apk_meta.outputs.apk_path }}"
           if-no-files-found: error
       - name: "Publish GitHub pre-release"
         if: github.event_name != 'pull_request' && github.ref_name == 'ci-artifact-helper'
         uses: ncipollo/release-action@v1
         with:
-          artifacts: "play-services-core/build/outputs/apk/mapboxUser/debug/app.revanced.android.gms-*.apk"
+          artifacts: "${{ steps.apk_meta.outputs.apk_path }}"
           artifactErrorsFailBuild: true
           prerelease: true
           tag: "gmscore-pkg-rename-test-${{ github.run_number }}-${{ github.run_attempt }}"
-          name: "gmscore-pkg-rename test build #${{ github.run_number }}.${{ github.run_attempt }}"
+          name: "gmscore-pkg-rename build 7dafecf"
           body: |
-            Test build for the `gmscore-pkg-rename` branch.
+            Test build for the `gmscore-pkg-rename` branch (built from commit [7dafecf](https://github.com/ReVanced/GmsCore/commit/7dafecff49415db0c3ca773311d855a84e94b6ed))
+
+            Github Action build:
+            https://github.com/zappybiby/GmsCore/actions/runs/${{ github.run_id }}
+
+            SHA-256:
+            `${{ steps.apk_meta.outputs.sha256 }}`
 
             Changes in this build:
-            - Fixes Android Auto integration.
+            Fixes:
             - Fixes ReVanced YT Music connecting to Android Auto.
             - Push notifications for both ReVanced YouTube and ReVanced YT Music should now work.
-            - Updates package-sensitive resolution paths and call sites to correctly target the renamed ReVanced CoreGms package in side-by-side install scenarios.
+
+            Changes:
+            Updates package call site resolution paths to correctly target the renamed ReVanced CoreGms package in side-by-side install scenarios.
 
             Install notes:
-            - If you already have ReVanced CoreGms (`app.revanced.android.gms`) installed, uninstall it first before installing this build.
-            - This build is debug-signed and cannot upgrade an existing release-signed installation.
+            - **If you already have ReVanced CoreGms installed, uninstall it (Look for "microG Services" in installed apps) first before installing this build.**
