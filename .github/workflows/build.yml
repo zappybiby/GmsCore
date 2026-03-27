@@ -1,5 +1,6 @@
 name: "Gradle build"
-permissions: {}
+permissions:
+  contents: write
 on:
   - push
   - pull_request
@@ -67,5 +68,26 @@ jobs:
           name: "gmscore-pkg-rename-artifact"
           path: "play-services-core/build/outputs/apk/mapboxUser/debug/app.revanced.android.gms-*.apk"
           if-no-files-found: error
+      - name: "Publish GitHub pre-release"
+        if: matrix.target == 'Debug' && github.event_name != 'pull_request' && github.ref_name == 'ci-artifact-helper'
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: "play-services-core/build/outputs/apk/mapboxUser/debug/app.revanced.android.gms-*.apk"
+          artifactErrorsFailBuild: true
+          prerelease: true
+          tag: "gmscore-pkg-rename-test-${{ github.run_number }}-${{ github.run_attempt }}"
+          name: "gmscore-pkg-rename test build #${{ github.run_number }}.${{ github.run_attempt }}"
+          body: |
+            Test build for the `gmscore-pkg-rename` branch.
+
+            Changes in this build:
+            - Fixes Android Auto integration.
+            - Fixes ReVanced YT Music connecting to Android Auto.
+            - Push notifications for both ReVanced YouTube and ReVanced YT Music should now work.
+            - Updates package-sensitive resolution paths and call sites to correctly target the renamed ReVanced CoreGms package in side-by-side install scenarios.
+
+            Install notes:
+            - If you already have ReVanced CoreGms (`app.revanced.android.gms`) installed, uninstall it first before installing this build.
+            - This build is debug-signed and cannot upgrade an existing release-signed installation.
       - name: "Execute Gradle lint"
         run: "./gradlew lint${{ matrix.target }}"
