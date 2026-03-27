@@ -60,5 +60,12 @@ jobs:
           done
       - name: "Execute Gradle assemble"
         run: "./gradlew assemble${{ matrix.target }}"
+      - name: "Upload ReVanced GmsCore APK"
+        if: matrix.target == 'Debug'
+        uses: actions/upload-artifact@v4
+        with:
+          name: "gmscore-pkg-rename-artifact"
+          path: "play-services-core/build/outputs/apk/mapboxUser/debug/app.revanced.android.gms-*.apk"
+          if-no-files-found: error
       - name: "Execute Gradle lint"
         run: "./gradlew lint${{ matrix.target }}"
