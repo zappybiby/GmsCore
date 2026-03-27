@@ -1,6 +1,8 @@
 name: "Gradle build"
 permissions:
   contents: write
+  id-token: write
+  attestations: write
 on:
   - push
   - pull_request
@@ -67,6 +69,10 @@ jobs:
           sha256="$(sha256sum "$apk_path" | awk '{print $1}')"
           echo "apk_path=$apk_path" >> "$GITHUB_OUTPUT"
           echo "sha256=$sha256" >> "$GITHUB_OUTPUT"
+      - name: "Generate artifact attestation"
+        uses: actions/attest@v4
+        with:
+          subject-path: "${{ steps.apk_meta.outputs.apk_path }}"
       - name: "Upload ReVanced GmsCore APK"
         uses: actions/upload-artifact@v4
         with:
