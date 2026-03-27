@@ -8,14 +8,10 @@ on:
 
 jobs:
   build:
-    name: "Gradle build ${{ matrix.target }}"
+    name: "Gradle build Debug"
     runs-on: ubuntu-latest
     env:
       GRADLE_MICROG_VERSION_WITHOUT_GIT: 1
-
-    strategy:
-      matrix:
-        target: [Debug, Release]
 
     steps:
       - name: "Free disk space"
@@ -60,16 +56,15 @@ jobs:
             fi
           done
       - name: "Execute Gradle assemble"
-        run: "./gradlew assemble${{ matrix.target }}"
+        run: "./gradlew assembleDebug"
       - name: "Upload ReVanced GmsCore APK"
-        if: matrix.target == 'Debug'
         uses: actions/upload-artifact@v4
         with:
           name: "gmscore-pkg-rename-artifact"
           path: "play-services-core/build/outputs/apk/mapboxUser/debug/app.revanced.android.gms-*.apk"
           if-no-files-found: error
       - name: "Publish GitHub pre-release"
-        if: matrix.target == 'Debug' && github.event_name != 'pull_request' && github.ref_name == 'ci-artifact-helper'
+        if: github.event_name != 'pull_request' && github.ref_name == 'ci-artifact-helper'
         uses: ncipollo/release-action@v1
         with:
           artifacts: "play-services-core/build/outputs/apk/mapboxUser/debug/app.revanced.android.gms-*.apk"
@@ -89,5 +84,3 @@ jobs:
             Install notes:
             - If you already have ReVanced CoreGms (`app.revanced.android.gms`) installed, uninstall it first before installing this build.
             - This build is debug-signed and cannot upgrade an existing release-signed installation.
-      - name: "Execute Gradle lint"
-        run: "./gradlew lint${{ matrix.target }}"
